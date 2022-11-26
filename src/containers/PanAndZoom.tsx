@@ -1,4 +1,4 @@
-import { Button } from 'flowbite-react';
+import { Button, FileInput } from 'flowbite-react';
 import React, { useRef, useEffect, useState, MouseEventHandler, ChangeEventHandler } from 'react';
 
 const cW = 400; // Canvas width
@@ -137,8 +137,13 @@ export const PanAndZoom = () => {
             <NumberInput controls={false} label="pan y" value={pan.y} onChange={num => setPan({ y: num })} /> */}
           </div>
         </div>
-        <div className="rounded-xl bg-white w-60 p-4 space-y-8">
-          <input type="file" id="image" accept="image/png, image/jpeg, image/webp, image/gif" onChange={changeImage} />
+        <div className="rounded-xl bg-white w-128 p-4 space-y-8">
+          <FileInput
+            className=''
+
+            accept="image/png, image/jpeg, image/webp, image/gif"
+            onChange={changeImage}
+          />
           <div className="space-y-4">
             <input type='range' min={0} max={5} step={0.01} value={zoom} onChange={e => setZoom(Number(e.target.value))} />
             <Button onClick={resetCanvas}>Reset</Button>
