@@ -94,7 +94,7 @@ export const PanAndZoom = () => {
 
   const changeImage: ChangeEventHandler<HTMLInputElement> = async e => {
     image.src = e ? URL.createObjectURL(e.target.files![0]) : '/vite.svg';
-    // Img.crossOrigin = 'Anonymous'; // Is this needed?
+    image.crossOrigin = 'Anonymous'; // needed when deployed
     await image.decode(); // .catch(alert); <- the source image cannot be decoded.
 
     const longerSide = Math.max(image.naturalWidth, image.naturalHeight);
