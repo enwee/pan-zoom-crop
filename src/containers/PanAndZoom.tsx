@@ -5,12 +5,15 @@ const cW = 400; // Canvas width
 const cH = 400; // Canvas height
 const cropW = 100;
 const cropFactor = cropW / cW;
+const bgPatternSvg = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="10" height="10" fill="silver"/><rect x="10" y="10" width="10" height="10" fill="silver"/></svg>'
 
 export const PanAndZoom = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const croppedRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(new Image());
   const image = imageRef.current;
+  const bgPatternRef = useRef<HTMLImageElement>(new Image())
+  const bgPattern = bgPatternRef.current
 
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -26,7 +29,7 @@ export const PanAndZoom = () => {
     init();
   }, []);
 
-  useEffect(() => {
+  useEffect(() => { // this works for when zoom changes, double counts when it a pan
     const x = (pan.x * zoom) - ((zoom - 1) * scale.w * cW / 2);
     const y = (pan.y * zoom) - ((zoom - 1) * scale.h * cH / 2);
     drawImage(x, y);
@@ -34,6 +37,9 @@ export const PanAndZoom = () => {
   }, [zoom, pan, origin, scale]);
 
   const init = async () => {
+    // Setup bgPattern
+    bgPattern.src = bgPatternSvg
+
     // Initial image
     changeImage(null as unknown as React.ChangeEvent<HTMLInputElement>);
 
@@ -55,14 +61,20 @@ export const PanAndZoom = () => {
   const drawImage = (x: number, y: number) => { // Here x, y is the offset from canvas origin
     const ctx = canvasRef.current!.getContext('2d')!;
     ctx.clearRect(0, 0, cW, cH);
+    ctx.fillStyle = ctx.createPattern(bgPattern, "repeat")!
+    ctx.fillRect(0, 0, 400, 400)
     ctx.drawImage(image, origin.x + x, origin.y + y, scale.w * cW * zoom, scale.h * cH * zoom);
+
     ctx.arc(cW / 2, cH / 2, cW / 2, 0, 2 * Math.PI);
+    ctx.lineWidth = 0.5
     ctx.stroke();
   };
 
   const cropImage = (x: number, y: number) => {
     const ctx = croppedRef.current!.getContext('2d')!;
     ctx.clearRect(0, 0, cW, cH);
+    ctx.fillStyle = ctx.createPattern(bgPattern, "repeat")!
+    ctx.fillRect(0, 0, cW, cH)
     ctx.drawImage(image, origin.x + x, origin.y + y, scale.w * cW * zoom, scale.h * cH * zoom);
     croppedRef.current!.toBlob(setCroppedImage);
   };
