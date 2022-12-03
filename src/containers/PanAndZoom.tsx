@@ -133,6 +133,7 @@ export const PanAndZoom = () => {
   };
 
   const ontouchstart: React.TouchEventHandler<HTMLCanvasElement> = (e) => {
+    e.preventDefault()
     drag.startX = e.touches[0].clientX;
     drag.startY = e.touches[0].clientY;
   }
