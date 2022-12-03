@@ -132,12 +132,12 @@ export const PanAndZoom = () => {
     drag.isDragging = false;
   };
 
-  const ontouchstart = (e) => {
+  const ontouchstart: React.TouchEventHandler<HTMLCanvasElement> = (e) => {
     drag.startX = e.touches[0].clientX;
     drag.startY = e.touches[0].clientY;
   }
 
-  const ontouchmove = (e) => {
+  const ontouchmove: React.TouchEventHandler<HTMLCanvasElement> = (e) => {
     e.preventDefault();
     const x = pan.x + (e.touches[0].clientX - drag.startX);
     const y = pan.y + (e.touches[0].clientY - drag.startY);
