@@ -23,7 +23,7 @@ export const PanAndZoom = () => {
   const dragRef = useRef({ isDragging: false, startX: 0, startY: 0 });
   const drag = dragRef.current;
 
-  const [croppedImage, setCroppedImage] = useState<Blob | null>(null);
+  const [croppedImage, setCroppedImage] = useState<Blob | null>(new Blob());
 
   useEffect(() => {
     init();
@@ -66,15 +66,15 @@ export const PanAndZoom = () => {
     ctx.drawImage(image, origin.x + x, origin.y + y, scale.w * cW * zoom, scale.h * cH * zoom);
 
     ctx.arc(cW / 2, cH / 2, cW / 2, 0, 2 * Math.PI);
-    ctx.lineWidth = 0.5
     ctx.stroke();
+    ctx.lineWidth = 0.3 // why is this not followed on redraw???
   };
 
   const cropImage = (x: number, y: number) => {
     const ctx = croppedRef.current!.getContext('2d')!;
     ctx.clearRect(0, 0, cW, cH);
-    ctx.fillStyle = ctx.createPattern(bgPattern, "repeat")!
-    ctx.fillRect(0, 0, cW, cH)
+    // ctx.fillStyle = ctx.createPattern(bgPattern, "repeat")!
+    // ctx.fillRect(0, 0, cW, cH)
     ctx.drawImage(image, origin.x + x, origin.y + y, scale.w * cW * zoom, scale.h * cH * zoom);
     croppedRef.current!.toBlob(setCroppedImage);
   };
@@ -93,8 +93,8 @@ export const PanAndZoom = () => {
   };
 
   const changeImage: ChangeEventHandler<HTMLInputElement> = async e => {
-    image.src = e ? URL.createObjectURL(e.target.files![0]) : '/vite.svg';
-    image.crossOrigin = 'Anonymous'; // needed when deployed
+    image.src = e ? URL.createObjectURL(e.target.files![0]) : './vite.svg';
+    image.crossOrigin = 'Anonymous'; // needed when deployed??
     await image.decode(); // .catch(alert); <- the source image cannot be decoded.
 
     const longerSide = Math.max(image.naturalWidth, image.naturalHeight);
@@ -132,16 +132,35 @@ export const PanAndZoom = () => {
     drag.isDragging = false;
   };
 
+  const ontouchstart = (e) => {
+    drag.startX = e.touches[0].clientX;
+    drag.startY = e.touches[0].clientY;
+  }
+
+  const ontouchmove = (e) => {
+    e.preventDefault();
+    const x = pan.x + (e.touches[0].clientX - drag.startX);
+    const y = pan.y + (e.touches[0].clientY - drag.startY);
+    setPan({ x, y });
+    drag.startX = e.touches[0].clientX;
+    drag.startY = e.touches[0].clientY;
+  }
+
+  // const ontouchend = 
+
   return (
     <>
       <div className="flex space-x-4">
         <div className="rounded-xl bg-white h-128 w-128 text-center p-4">
-          <canvas className="border-solid border cursor-move"
+          <canvas className="cursor-move"
             ref={canvasRef}
             onMouseDown={onmousedown}
             onMouseMove={onmousemove}
             onMouseLeave={onmouseleave}
             onMouseUp={onmouseup}
+            onTouchStart={ontouchstart}
+            onTouchMove={ontouchmove}
+          // onTouchEnd={ontouchend}
           />
           <div className="flex justify-center space-x-4">
             {/* <NumberInput controls={false} label="zoom" value={zoom} onChange={num => setZoom(num)} />
@@ -152,8 +171,8 @@ export const PanAndZoom = () => {
         <div className="rounded-xl bg-white w-128 p-4 space-y-8">
           <FileInput
             className=''
-
-            accept="image/png, image/jpeg, image/webp, image/gif"
+            // this doesnt work with mobile
+            // accept="image/png, image/jpeg, image/webp, image/gif"
             onChange={changeImage}
           />
           <div className="space-y-4">
@@ -161,13 +180,26 @@ export const PanAndZoom = () => {
             <Button onClick={resetCanvas}>Reset</Button>
           </div>
           <div className="space-y-4">
-            <canvas className="bg-neutral-30" ref={croppedRef} />
+            <div className='rounded-full'
+              style={{
+                width: 100,
+                height: 100,
+                backgroundImage: `url(${encodeURI(bgPatternSvg)})`
+              }}
+            >
+              <img className="rounded-full" src={URL.createObjectURL(croppedImage!)}></img>
+              {/* {URL.revokeObjectURL()} */}
+              {/* this to fix lag on subsequent? */}
+            </div>
             <div>{croppedImage?.size} bytes</div>
             <div>{croppedImage?.type}</div>
             <Button onClick={saveImage}>Save</Button>
           </div>
         </div>
       </div>
+
+      {/* need to figure out why offscreencanvas removed in typescript lib.dom */}
+      <canvas className="hidden" ref={croppedRef} />
     </>
   );
 };
