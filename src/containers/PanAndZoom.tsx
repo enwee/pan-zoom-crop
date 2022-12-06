@@ -1,4 +1,4 @@
-import { Button, FileInput } from 'flowbite-react';
+import { Button, FileInput, Label, TextInput } from 'flowbite-react';
 import React, { useRef, useEffect, useState, MouseEventHandler, ChangeEventHandler } from 'react';
 
 const cW = 400; // Canvas width
@@ -73,8 +73,6 @@ export const PanAndZoom = () => {
   const cropImage = (x: number, y: number) => {
     const ctx = croppedRef.current!.getContext('2d')!;
     ctx.clearRect(0, 0, cW, cH);
-    // ctx.fillStyle = ctx.createPattern(bgPattern, "repeat")!
-    // ctx.fillRect(0, 0, cW, cH)
     ctx.drawImage(image, origin.x + x, origin.y + y, scale.w * cW * zoom, scale.h * cH * zoom);
     croppedRef.current!.toBlob(setCroppedImage);
   };
@@ -108,40 +106,38 @@ export const PanAndZoom = () => {
     resetCanvas();
   };
 
-  const onmousedown: MouseEventHandler<HTMLCanvasElement> = e => {
+  const onMouseDown: MouseEventHandler<HTMLCanvasElement> = e => {
     drag.isDragging = true;
     drag.startX = e.clientX;
     drag.startY = e.clientY;
   };
 
-  const onmousemove: MouseEventHandler<HTMLCanvasElement> = e => {
+  const onMouseMove: MouseEventHandler<HTMLCanvasElement> = e => {
     if (drag.isDragging) {
-      const x = pan.x + (e.clientX - drag.startX);
-      const y = pan.y + (e.clientY - drag.startY);
+      const x = pan.x + (e.clientX - drag.startX) / zoom;
+      const y = pan.y + (e.clientY - drag.startY) / zoom;
       setPan({ x, y });
       drag.startX = e.clientX;
       drag.startY = e.clientY;
     }
   };
 
-  const onmouseleave: MouseEventHandler<HTMLCanvasElement> = () => {
+  const onMouseUpOrLeave: MouseEventHandler<HTMLCanvasElement> = () => {
     drag.isDragging = false;
   };
 
-  const onmouseup: MouseEventHandler<HTMLCanvasElement> = () => {
-    drag.isDragging = false;
-  };
-
-  const ontouchstart: React.TouchEventHandler<HTMLCanvasElement> = (e) => {
+  const onTouchStart: React.TouchEventHandler<HTMLCanvasElement> = (e) => {
     e.preventDefault()
+    e.stopPropagation()
     drag.startX = e.touches[0].clientX;
     drag.startY = e.touches[0].clientY;
   }
 
-  const ontouchmove: React.TouchEventHandler<HTMLCanvasElement> = (e) => {
+  const onTouchMove: React.TouchEventHandler<HTMLCanvasElement> = (e) => {
     e.preventDefault();
-    const x = pan.x + (e.touches[0].clientX - drag.startX);
-    const y = pan.y + (e.touches[0].clientY - drag.startY);
+    e.stopPropagation()
+    const x = pan.x + (e.touches[0].clientX - drag.startX) / zoom;
+    const y = pan.y + (e.touches[0].clientY - drag.startY) / zoom;
     setPan({ x, y });
     drag.startX = e.touches[0].clientX;
     drag.startY = e.touches[0].clientY;
@@ -152,25 +148,26 @@ export const PanAndZoom = () => {
   return (
     <>
       <div className="flex space-x-4">
-        <div className="rounded-xl bg-white h-128 w-128 text-center p-4">
-          <canvas className="cursor-move"
+        <div className="rounded-xl bg-white h-128 w-128 text-center p-4 space-y-4">
+          <canvas className="cursor-move overscroll-none"
             ref={canvasRef}
-            onMouseDown={onmousedown}
-            onMouseMove={onmousemove}
-            onMouseLeave={onmouseleave}
-            onMouseUp={onmouseup}
-            onTouchStart={ontouchstart}
-            onTouchMove={ontouchmove}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseLeave={onMouseUpOrLeave}
+            onMouseUp={onMouseUpOrLeave}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
           // onTouchEnd={ontouchend}
           />
-          <div className="flex justify-center space-x-4">
-            {/* <NumberInput controls={false} label="zoom" value={zoom} onChange={num => setZoom(num)} />
-            <NumberInput controls={false} label="pan x" value={pan.x} onChange={num => setPan({ x: num })} />
-            <NumberInput controls={false} label="pan y" value={pan.y} onChange={num => setPan({ y: num })} /> */}
+          <div className="flex justify-center items-center space-x-4">
+            <Label value="zoom" /><TextInput className='w-16' type="number" value={zoom} onChange={e => setZoom(Number(e.target.value))} />
+            <Label value="pan-x" /><TextInput className='w-16' type="number" value={pan.x} onChange={e => setPan(({ y }) => ({ x: Number(e.target.value), y }))} />
+            <Label value="pan-y" /><TextInput className='w-16' type="number" value={pan.y} onChange={e => setPan(({ x }) => ({ x, y: Number(e.target.value) }))} />
           </div>
         </div>
         <div className="rounded-xl bg-white w-128 p-4 space-y-8">
           <FileInput
+
             className=''
             // this doesnt work with mobile
             // accept="image/png, image/jpeg, image/webp, image/gif"
@@ -189,8 +186,10 @@ export const PanAndZoom = () => {
               }}
             >
               <img className="rounded-full" src={URL.createObjectURL(croppedImage!)}></img>
+              {/* these to fix lag on subsequent? */}
               {/* {URL.revokeObjectURL()} */}
-              {/* this to fix lag on subsequent? */}
+              {/* react 18 deferred hooks */}
+              {/* useLayoutEffect */}
             </div>
             <div>{croppedImage?.size} bytes</div>
             <div>{croppedImage?.type}</div>

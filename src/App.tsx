@@ -6,8 +6,8 @@ export default () => {
   const [count, setCount] = useState<number>(0)
 
   return (
-    <div className='bg-purple-300 p-8'>
-      <PanAndZoom></PanAndZoom>
+    <div className='bg-blue-300 p-8'>
+      <PanAndZoom />
     </div>
   )
 }
